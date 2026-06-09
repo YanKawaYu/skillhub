@@ -85,4 +85,11 @@ describe('LoginPage', () => {
 
     expect(html).toContain('data-tabs-default="oauth"')
   })
+
+  it('does not expose local registration from the login page', () => {
+    const html = renderToStaticMarkup(<LoginPage />)
+
+    expect(html).not.toContain('login.noAccount')
+    expect(html).not.toContain('login.register')
+  })
 })
