@@ -438,7 +438,7 @@ public class SkillPublishService {
         // 8. Create SkillVersion
         SkillVersion version = new SkillVersion(skill.getId(), metadata.version(), publisherId);
         version.setRequestedVisibility(visibility);
-        boolean autoPublish = forceAutoPublish || isSuperAdmin;
+        boolean autoPublish = forceAutoPublish || isSuperAdmin || shouldAutoPublishUpdate(skill, visibility);
         if (autoPublish) {
             version.setStatus(SkillVersionStatus.PUBLISHED);
             version.setPublishedAt(currentTime());
@@ -587,6 +587,15 @@ public class SkillPublishService {
         securityScanService.softDeleteByVersionId(version.getId());
         skillVersionRepository.delete(version);
         skillVersionRepository.flush();
+    }
+
+    private boolean shouldAutoPublishUpdate(Skill skill, SkillVisibility requestedVisibility) {
+        if (requestedVisibility == SkillVisibility.PRIVATE || skill.getVisibility() != requestedVisibility) {
+            return false;
+        }
+        return !skillVersionRepository
+                .findBySkillIdAndStatus(skill.getId(), SkillVersionStatus.PUBLISHED)
+                .isEmpty();
     }
 
     private String resolveNamespaceSlug(Long namespaceId) {
