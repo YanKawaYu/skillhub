@@ -106,6 +106,9 @@ skillhub:
       email-from-name: ${SKILLHUB_AUTH_PASSWORD_RESET_FROM_NAME:SkillHub}
   public:
     base-url: ${SKILLHUB_PUBLIC_BASE_URL:}
+  integration:
+    hunterdock:
+      provision-secret: ${SKILLHUB_HUNTERDOCK_PROVISION_SECRET:}
   access-policy:
     mode: OPEN
   storage:

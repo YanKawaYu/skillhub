@@ -59,6 +59,16 @@ class RouteSecurityPolicyRegistryTest {
     }
 
     @Test
+    void authorizationPolicies_shouldPermitHunterDockInternalProvisionEndpoint() {
+        boolean matched = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.POST
+                        && "/api/internal/hunterdock/provision".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+
+        assertTrue(matched);
+    }
+
+    @Test
     void authorizationPolicies_shouldRequireAuthenticationForNamespaceDiscovery() {
         boolean matchedV1 = registry.authorizationPolicies().stream()
                 .anyMatch(policy -> policy.method() == HttpMethod.GET
