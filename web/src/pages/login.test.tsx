@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ReactNode } from 'react'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: unknown }) => children,
@@ -55,7 +56,9 @@ vi.mock('@/shared/ui/input', () => ({
 }))
 
 vi.mock('@/shared/ui/tabs', () => ({
-  Tabs: ({ children }: { children: unknown }) => children,
+  Tabs: ({ children, defaultValue }: { children: ReactNode, defaultValue?: string }) => (
+    <div data-tabs-default={defaultValue}>{children}</div>
+  ),
   TabsContent: ({ children }: { children: unknown }) => children,
   TabsList: ({ children }: { children: unknown }) => children,
   TabsTrigger: ({ children }: { children: unknown }) => children,
@@ -75,5 +78,11 @@ describe('LoginPage', () => {
     expect(html).toContain('login.title')
     expect(html).toContain('login.subtitle')
     expect(html).toContain('login.submit')
+  })
+
+  it('defaults to the OAuth tab', () => {
+    const html = renderToStaticMarkup(<LoginPage />)
+
+    expect(html).toContain('data-tabs-default="oauth"')
   })
 })
