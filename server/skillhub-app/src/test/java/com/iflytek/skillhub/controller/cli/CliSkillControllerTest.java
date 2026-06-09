@@ -62,7 +62,7 @@ class CliSkillControllerTest {
     void searchReturnsCompactCliResponse() throws Exception {
         given(cliSkillAppService.search("pdf", 20, null, null)).willReturn(
                 new CliSkillAppService.CliSearchResult(List.of(
-                        new CliSkillAppService.CliSearchItem("global", "pdf-parser", "1.2.0", "Parse PDFs")
+                        new CliSkillAppService.CliSearchItem("global", "pdf-parser", "1.2.0", "Parse PDFs", "owner-1", "Alice")
                 ), 1, 20)
         );
 
@@ -70,7 +70,9 @@ class CliSkillControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].namespace").value("global"))
                 .andExpect(jsonPath("$.data.items[0].slug").value("pdf-parser"))
-                .andExpect(jsonPath("$.data.items[0].latestVersion").value("1.2.0"));
+                .andExpect(jsonPath("$.data.items[0].latestVersion").value("1.2.0"))
+                .andExpect(jsonPath("$.data.items[0].ownerId").value("owner-1"))
+                .andExpect(jsonPath("$.data.items[0].ownerDisplayName").value("Alice"));
     }
 
     @Test

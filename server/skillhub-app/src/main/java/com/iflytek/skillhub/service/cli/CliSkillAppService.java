@@ -47,7 +47,14 @@ public class CliSkillAppService {
         this.skillPublishService = skillPublishService;
     }
 
-    public record CliSearchItem(String namespace, String slug, String latestVersion, String summary) {}
+    public record CliSearchItem(
+            String namespace,
+            String slug,
+            String latestVersion,
+            String summary,
+            String ownerId,
+            String ownerDisplayName
+    ) {}
     public record CliSearchResult(List<CliSearchItem> items, long total, int limit) {}
 
     public CliSearchResult search(String q, int limit, String userId, Map<Long, NamespaceRole> userNsRoles) {
@@ -60,7 +67,9 @@ public class CliSkillAppService {
                         item.namespace(),
                         item.slug(),
                         item.publishedVersion() != null ? item.publishedVersion().version() : null,
-                        item.summary()
+                        item.summary(),
+                        item.ownerId(),
+                        item.ownerDisplayName()
                 ))
                 .toList();
 

@@ -58,7 +58,7 @@ class CliSkillAppServiceTest {
                         "global", Instant.now(), false,
                         new SkillLifecycleVersionResponse(1L, "1.2.0", "PUBLISHED"),
                         new SkillLifecycleVersionResponse(1L, "1.2.0", "PUBLISHED"),
-                        null, "PUBLISHED"
+                        null, "PUBLISHED", "owner-1", "Alice"
                 )),
                 1L, 0, 20
         );
@@ -72,6 +72,8 @@ class CliSkillAppServiceTest {
         assertEquals("pdf-parser", result.items().get(0).slug());
         assertEquals("1.2.0", result.items().get(0).latestVersion());
         assertEquals("Parse PDFs", result.items().get(0).summary());
+        assertEquals("owner-1", result.items().get(0).ownerId());
+        assertEquals("Alice", result.items().get(0).ownerDisplayName());
         assertEquals(1L, result.total());
         assertEquals(20, result.limit());
     }

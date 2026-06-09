@@ -8,6 +8,8 @@ import com.iflytek.skillhub.domain.namespace.NamespaceService;
 import com.iflytek.skillhub.domain.skill.Skill;
 import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.service.SkillLifecycleProjectionService;
+import com.iflytek.skillhub.domain.user.UserAccount;
+import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
 import com.iflytek.skillhub.search.SearchQuery;
 import com.iflytek.skillhub.search.SearchQueryService;
@@ -37,6 +39,7 @@ public class SkillSearchAppService {
     private final NamespaceService namespaceService;
     private final SkillLifecycleProjectionService skillLifecycleProjectionService;
     private final RbacService rbacService;
+    private final UserAccountRepository userAccountRepository;
 
     public SkillSearchAppService(
             SearchQueryService searchQueryService,
@@ -44,13 +47,15 @@ public class SkillSearchAppService {
             NamespaceRepository namespaceRepository,
             NamespaceService namespaceService,
             SkillLifecycleProjectionService skillLifecycleProjectionService,
-            RbacService rbacService) {
+            RbacService rbacService,
+            UserAccountRepository userAccountRepository) {
         this.searchQueryService = searchQueryService;
         this.skillRepository = skillRepository;
         this.namespaceRepository = namespaceRepository;
         this.namespaceService = namespaceService;
         this.skillLifecycleProjectionService = skillLifecycleProjectionService;
         this.rbacService = rbacService;
+        this.userAccountRepository = userAccountRepository;
     }
 
     public record SearchResponse(
@@ -179,18 +184,42 @@ public class SkillSearchAppService {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getSlug()));
         Map<Long, SkillLifecycleProjectionService.Projection> projectionsBySkillId =
                 skillLifecycleProjectionService.projectPublishedSummaries(matchedSkills);
+        Map<String, String> ownerDisplayNamesById = ownerDisplayNamesById(matchedSkills);
 
         return skillIds.stream()
                 .map(skillsById::get)
                 .filter(java.util.Objects::nonNull)
-                .map(skill -> toSummaryResponse(skill, namespaceSlugsById, projectionsBySkillId.get(skill.getId())))
+                .map(skill -> toSummaryResponse(
+                        skill,
+                        namespaceSlugsById,
+                        projectionsBySkillId.get(skill.getId()),
+                        ownerDisplayNamesById
+                ))
                 .toList();
+    }
+
+    private Map<String, String> ownerDisplayNamesById(List<Skill> skills) {
+        List<String> ownerIds = skills.stream()
+                .map(Skill::getOwnerId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ownerIds.isEmpty()) {
+            return Map.of();
+        }
+        List<UserAccount> owners = userAccountRepository.findByIdIn(ownerIds);
+        if (owners == null || owners.isEmpty()) {
+            return Map.of();
+        }
+        return owners.stream()
+                .collect(Collectors.toMap(UserAccount::getId, UserAccount::getDisplayName, (left, right) -> left));
     }
 
     private SkillSummaryResponse toSummaryResponse(
             Skill skill,
             Map<Long, String> namespaceSlugsById,
-            SkillLifecycleProjectionService.Projection projection) {
+            SkillLifecycleProjectionService.Projection projection,
+            Map<String, String> ownerDisplayNamesById) {
         String namespaceSlug = namespaceSlugsById.get(skill.getNamespaceId());
 
         return new SkillSummaryResponse(
@@ -210,7 +239,9 @@ public class SkillSearchAppService {
                 toLifecycleVersion(projection.headlineVersion()),
                 toLifecycleVersion(projection.publishedVersion()),
                 toLifecycleVersion(projection.ownerPreviewVersion()),
-                projection.resolutionMode().name()
+                projection.resolutionMode().name(),
+                skill.getOwnerId(),
+                ownerDisplayNamesById.get(skill.getOwnerId())
         );
     }
 

@@ -11,6 +11,8 @@ import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
 import com.iflytek.skillhub.domain.skill.SkillVisibility;
 import com.iflytek.skillhub.domain.skill.service.SkillLifecycleProjectionService;
+import com.iflytek.skillhub.domain.user.UserAccount;
+import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.search.SearchQuery;
 import com.iflytek.skillhub.search.SearchQueryService;
 import com.iflytek.skillhub.search.SearchResult;
@@ -55,6 +57,9 @@ class SkillSearchAppServiceTest {
     @Mock
     private RbacService rbacService;
 
+    @Mock
+    private UserAccountRepository userAccountRepository;
+
     private SkillSearchAppService service;
 
     @BeforeEach
@@ -65,7 +70,8 @@ class SkillSearchAppServiceTest {
                 namespaceRepository,
                 namespaceService,
                 new SkillLifecycleProjectionService(skillVersionRepository),
-                rbacService
+                rbacService,
+                userAccountRepository
         );
     }
 
@@ -105,6 +111,32 @@ class SkillSearchAppServiceTest {
         assertEquals("visible-skill", response.items().getFirst().slug());
         assertEquals(1, response.total());
         verify(searchQueryService, times(1)).search(any());
+    }
+
+    @Test
+    void search_shouldIncludeOwnerDisplayName() {
+        Skill visibleSkill = new Skill(2L, "visible-skill", "owner-1", SkillVisibility.PUBLIC);
+        setField(visibleSkill, "id", 11L);
+        visibleSkill.setLatestVersionId(111L);
+
+        Namespace activeNamespace = new Namespace("team-a", "Team A", "owner-1");
+        setField(activeNamespace, "id", 2L);
+        activeNamespace.setStatus(NamespaceStatus.ACTIVE);
+
+        when(searchQueryService.search(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new SearchResult(List.of(11L), 1, 0, 20));
+        when(skillRepository.findByIdIn(List.of(11L))).thenReturn(List.of(visibleSkill));
+        when(namespaceRepository.findByIdIn(List.of(2L))).thenReturn(List.of(activeNamespace));
+        when(skillVersionRepository.findByIdIn(List.of(111L))).thenReturn(List.of());
+        when(skillVersionRepository.findBySkillIdInAndStatus(List.of(11L), com.iflytek.skillhub.domain.skill.SkillVersionStatus.PUBLISHED))
+                .thenReturn(List.of());
+        when(userAccountRepository.findByIdIn(List.of("owner-1")))
+                .thenReturn(List.of(new UserAccount("owner-1", "Alice", "alice@example.com", "")));
+
+        SkillSearchAppService.SearchResponse response = service.search("skill", null, "newest", 0, 20, null, null);
+
+        assertEquals("owner-1", response.items().getFirst().ownerId());
+        assertEquals("Alice", response.items().getFirst().ownerDisplayName());
     }
 
     @Test

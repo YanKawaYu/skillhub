@@ -114,7 +114,9 @@ class ClawHubCompatControllerTest {
                                 new SkillLifecycleVersionResponse(11L, "1.2.0", "PUBLISHED"),
                                 new SkillLifecycleVersionResponse(11L, "1.2.0", "PUBLISHED"),
                                 null,
-                                "PUBLISHED")),
+                                "PUBLISHED",
+                                "owner-1",
+                                "Alice")),
                         1,
                         0,
                         20

@@ -4,5 +4,7 @@ public record CliSearchItemResponse(
         String namespace,
         String slug,
         String latestVersion,
-        String summary
+        String summary,
+        String ownerId,
+        String ownerDisplayName
 ) {}

@@ -159,6 +159,8 @@ export interface SkillSummary {
   id: number
   slug: string
   displayName: string
+  ownerId?: string
+  ownerDisplayName?: string
   summary?: string
   visibility?: string
   status?: string

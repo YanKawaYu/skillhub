@@ -49,7 +49,14 @@ public class CliSkillController extends BaseApiController {
         var result = cliSkillAppService.search(q, limit, userId, userNsRoles);
         return ok("response.success.read", new CliSearchResponse(
                 result.items().stream()
-                        .map(item -> new CliSearchItemResponse(item.namespace(), item.slug(), item.latestVersion(), item.summary()))
+                        .map(item -> new CliSearchItemResponse(
+                                item.namespace(),
+                                item.slug(),
+                                item.latestVersion(),
+                                item.summary(),
+                                item.ownerId(),
+                                item.ownerDisplayName()
+                        ))
                         .toList(),
                 result.total(),
                 result.limit()
