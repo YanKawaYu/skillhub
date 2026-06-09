@@ -11,6 +11,13 @@ interface LoginButtonProps {
  */
 function OAuthIcon({ provider }: { provider: string }) {
   const normalizedProvider = provider.toLowerCase()
+  if (normalizedProvider === 'tuyoo') {
+    return (
+      <span className="mr-3 inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+        T
+      </span>
+    )
+  }
   return (
     <img
       src={`/${normalizedProvider}-logo.svg`}
@@ -20,6 +27,7 @@ function OAuthIcon({ provider }: { provider: string }) {
   )
 }
 
+
 /**
  * Renders OAuth login buttons from the auth-method catalog returned by the backend.
  */
@@ -27,7 +35,9 @@ export function LoginButton({ returnTo }: LoginButtonProps) {
   const { t } = useTranslation()
   const { data, isLoading } = useAuthMethods(returnTo)
 
-  const providers = (data ?? []).filter((method) => method.methodType === 'OAUTH_REDIRECT')
+  const providers = (data ?? []).filter((method) =>
+    method.methodType === 'OAUTH_REDIRECT' && method.provider.toLowerCase() === 'tuyoo'
+  )
 
   if (isLoading) {
     return (
@@ -58,4 +68,3 @@ export function LoginButton({ returnTo }: LoginButtonProps) {
     </div>
   )
 }
-
