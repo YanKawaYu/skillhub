@@ -16,6 +16,7 @@ backend**, a **React web UI**, a **security scanner**, and a **ClawHub CLI compa
 | Storage    | LocalFile (dev) / S3/MinIO (prod)                          |
 | Build      | `make dev-all` (dev), `make staging` (pre-PR)              |
 | Docs       | `docs/` (design), `document/` (VitePress user guide)       |
+| Private release | `docs/20-ai-release-runbook.md`                       |
 | CI         | GitHub Actions (`.github/workflows/`)                      |
 
 ## Directory Map
