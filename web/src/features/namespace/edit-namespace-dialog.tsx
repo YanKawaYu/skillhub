@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Namespace } from '@/api/types'
+import type { Namespace, NamespaceReviewPolicy } from '@/api/types'
 import { useUpdateNamespace } from '@/shared/hooks/use-namespace-queries'
 import { toast } from '@/shared/lib/toast'
 import { Button } from '@/shared/ui/button'
@@ -15,7 +15,28 @@ import {
 } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
+
+const REVIEW_POLICIES: NamespaceReviewPolicy[] = ['AUTO_APPROVE', 'FIRST_PUBLISH_ONLY', 'EVERY_PUBLISH']
+
+const REVIEW_POLICY_LABEL_KEYS: Record<NamespaceReviewPolicy, string> = {
+  AUTO_APPROVE: 'namespaceEdit.reviewPolicyAutoApprove',
+  FIRST_PUBLISH_ONLY: 'namespaceEdit.reviewPolicyFirstPublishOnly',
+  EVERY_PUBLISH: 'namespaceEdit.reviewPolicyEveryPublish',
+}
+
+const REVIEW_POLICY_HINT_KEYS: Record<NamespaceReviewPolicy, string> = {
+  AUTO_APPROVE: 'namespaceEdit.reviewPolicyAutoApproveHint',
+  FIRST_PUBLISH_ONLY: 'namespaceEdit.reviewPolicyFirstPublishOnlyHint',
+  EVERY_PUBLISH: 'namespaceEdit.reviewPolicyEveryPublishHint',
+}
 
 interface EditNamespaceDialogProps {
   namespace: Namespace
@@ -28,11 +49,15 @@ export function EditNamespaceDialog({ namespace, children }: EditNamespaceDialog
   const [open, setOpen] = useState(false)
   const [displayName, setDisplayName] = useState(namespace.displayName)
   const [description, setDescription] = useState(namespace.description ?? '')
+  const [reviewPolicy, setReviewPolicy] = useState<NamespaceReviewPolicy>(
+    namespace.reviewPolicy ?? 'FIRST_PUBLISH_ONLY',
+  )
   const [displayNameError, setDisplayNameError] = useState<string | null>(null)
 
   const resetDialog = () => {
     setDisplayName(namespace.displayName)
     setDescription(namespace.description ?? '')
+    setReviewPolicy(namespace.reviewPolicy ?? 'FIRST_PUBLISH_ONLY')
     setDisplayNameError(null)
     updateMutation.reset()
   }
@@ -56,6 +81,7 @@ export function EditNamespaceDialog({ namespace, children }: EditNamespaceDialog
         slug: namespace.slug,
         displayName: trimmedDisplayName,
         description: description.trim(),
+        reviewPolicy,
       })
       toast.success(t('namespaceEdit.saveSuccess'))
       setOpen(false)
@@ -96,6 +122,26 @@ export function EditNamespaceDialog({ namespace, children }: EditNamespaceDialog
               onChange={(event) => setDescription(event.target.value)}
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-review-policy">{t('namespaceEdit.reviewPolicyLabel')}</Label>
+            <Select
+              value={reviewPolicy}
+              onValueChange={(value) => setReviewPolicy(value as NamespaceReviewPolicy)}
+            >
+              <SelectTrigger id="edit-review-policy">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REVIEW_POLICIES.map((policy) => (
+                  <SelectItem key={policy} value={policy}>
+                    {t(REVIEW_POLICY_LABEL_KEYS[policy])}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t(REVIEW_POLICY_HINT_KEYS[reviewPolicy])}</p>
           </div>
         </div>
 

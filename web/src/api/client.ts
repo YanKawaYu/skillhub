@@ -30,6 +30,7 @@ import type {
   User,
   ManagedNamespace,
   Namespace,
+  NamespaceReviewPolicy,
   CreateNamespaceRequest,
   NamespaceMember,
   NamespaceCandidateUser,
@@ -743,13 +744,19 @@ export const namespaceApi = {
     })
   },
 
-  async update(slug: string, request: { displayName?: string; description?: string }): Promise<Namespace> {
+  async update(
+    slug: string,
+    request: { displayName?: string; description?: string; reviewPolicy?: NamespaceReviewPolicy },
+  ): Promise<Namespace> {
     const body: Record<string, string> = {}
     if (request.displayName !== undefined) {
       body.displayName = request.displayName.trim()
     }
     if (request.description !== undefined) {
       body.description = request.description === '' ? '' : request.description.trim()
+    }
+    if (request.reviewPolicy !== undefined) {
+      body.reviewPolicy = request.reviewPolicy
     }
     return fetchJson<Namespace>(`/api/v1/namespaces/${normalizeNamespaceSlug(slug)}`, {
       method: 'PUT',

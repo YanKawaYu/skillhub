@@ -66,6 +66,12 @@ public class NamespaceService {
     @Transactional
     public Namespace updateNamespace(Long namespaceId, String displayName, String description, String avatarUrl,
                                      String operatorUserId) {
+        return updateNamespace(namespaceId, displayName, description, avatarUrl, null, operatorUserId);
+    }
+
+    @Transactional
+    public Namespace updateNamespace(Long namespaceId, String displayName, String description, String avatarUrl,
+                                     NamespaceReviewPolicy reviewPolicy, String operatorUserId) {
         Namespace namespace = namespaceRepository.findById(namespaceId)
                 .orElseThrow(() -> new DomainBadRequestException("error.namespace.id.notFound", namespaceId));
         assertNotImmutable(namespace);
@@ -80,6 +86,9 @@ public class NamespaceService {
         }
         if (avatarUrl != null) {
             namespace.setAvatarUrl(avatarUrl);
+        }
+        if (reviewPolicy != null) {
+            namespace.setReviewPolicy(reviewPolicy);
         }
 
         return namespaceRepository.save(namespace);

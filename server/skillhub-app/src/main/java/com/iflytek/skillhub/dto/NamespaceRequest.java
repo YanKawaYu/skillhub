@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.dto;
 
+import com.iflytek.skillhub.domain.namespace.NamespaceReviewPolicy;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -13,5 +14,7 @@ public record NamespaceRequest(
         String displayName,
 
         @Size(max = 512, message = "{validation.namespace.description.size}")
-        String description
+        String description,
+
+        NamespaceReviewPolicy reviewPolicy
 ) {}

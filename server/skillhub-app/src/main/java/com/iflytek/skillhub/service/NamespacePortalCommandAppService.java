@@ -77,6 +77,7 @@ public class NamespacePortalCommandAppService {
                 request.displayName(),
                 request.description(),
                 null,
+                request.reviewPolicy(),
                 userId
         );
         return NamespaceResponse.from(updated);

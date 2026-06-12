@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceMember;
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
+import com.iflytek.skillhub.domain.namespace.NamespaceReviewPolicy;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.domain.security.SecurityScanService;
 import com.iflytek.skillhub.domain.review.ReviewTask;
@@ -230,6 +231,109 @@ class SkillPublishServiceTest {
         assertEquals("Test v2", skill.getSummary());
         verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
         verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
+    }
+
+    @Test
+    void testPublishFromEntries_AutoApprovePolicy_ShouldPublishFirstVersionWithoutReview() throws Exception {
+        String namespaceSlug = "test-ns";
+        String publisherId = "user-100";
+        String skillMdContent = "---\nname: test-skill\ndescription: Test\nversion: 1.0.0\n---\nBody";
+
+        PackageEntry skillMd = new PackageEntry("SKILL.md", skillMdContent.getBytes(), skillMdContent.length(), "text/markdown");
+        List<PackageEntry> entries = List.of(skillMd);
+
+        Namespace namespace = new Namespace(namespaceSlug, "Test NS", "user-1");
+        namespace.setReviewPolicy(NamespaceReviewPolicy.AUTO_APPROVE);
+        setId(namespace, 1L);
+        NamespaceMember member = mock(NamespaceMember.class);
+        SkillMetadata metadata = new SkillMetadata("test-skill", "Test", "1.0.0", "Body", Map.of());
+
+        Skill skill = new Skill(1L, "test-skill", publisherId, SkillVisibility.PUBLIC);
+        setId(skill, 1L);
+
+        when(namespaceRepository.findBySlug(namespaceSlug)).thenReturn(Optional.of(namespace));
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(any(), eq(publisherId))).thenReturn(Optional.of(member));
+        when(skillPackageValidator.validate(entries)).thenReturn(ValidationResult.pass());
+        when(skillMetadataParser.parse(skillMdContent)).thenReturn(metadata);
+        when(prePublishValidator.validate(any())).thenReturn(ValidationResult.pass());
+        when(skillRepository.findByNamespaceIdAndSlug(any(), eq("test-skill"))).thenReturn(List.of(skill));
+        when(skillRepository.findByNamespaceIdAndSlugAndOwnerId(any(), eq("test-skill"), eq(publisherId))).thenReturn(Optional.of(skill));
+        when(skillVersionRepository.findBySkillIdAndVersion(any(), eq("1.0.0"))).thenReturn(Optional.empty());
+        when(skillVersionRepository.save(any(SkillVersion.class))).thenAnswer(invocation -> {
+            SkillVersion saved = invocation.getArgument(0);
+            if (saved.getId() == null) {
+                setId(saved, 10L);
+            }
+            return saved;
+        });
+        when(skillRepository.save(any())).thenReturn(skill);
+
+        SkillPublishService.PublishResult result = service.publishFromEntries(
+                namespaceSlug,
+                entries,
+                publisherId,
+                SkillVisibility.PUBLIC,
+                Set.of()
+        );
+
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
+        assertEquals(10L, skill.getLatestVersionId());
+        verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
+        verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
+    }
+
+    @Test
+    void testPublishFromEntries_EveryPublishPolicy_ShouldRequireReviewForUpdate() throws Exception {
+        String namespaceSlug = "test-ns";
+        String publisherId = "user-100";
+        String skillMdContent = "---\nname: test-skill\ndescription: Test v2\nversion: 2.0.0\n---\nBody";
+
+        PackageEntry skillMd = new PackageEntry("SKILL.md", skillMdContent.getBytes(), skillMdContent.length(), "text/markdown");
+        List<PackageEntry> entries = List.of(skillMd);
+
+        Namespace namespace = new Namespace(namespaceSlug, "Test NS", "user-1");
+        namespace.setReviewPolicy(NamespaceReviewPolicy.EVERY_PUBLISH);
+        setId(namespace, 1L);
+        NamespaceMember member = mock(NamespaceMember.class);
+        SkillMetadata metadata = new SkillMetadata("test-skill", "Test v2", "2.0.0", "Body", Map.of());
+
+        Skill skill = new Skill(1L, "test-skill", publisherId, SkillVisibility.PUBLIC);
+        setId(skill, 1L);
+        SkillVersion publishedVersion = new SkillVersion(skill.getId(), "1.0.0", publisherId);
+        publishedVersion.setStatus(SkillVersionStatus.PUBLISHED);
+        setId(publishedVersion, 9L);
+
+        when(namespaceRepository.findBySlug(namespaceSlug)).thenReturn(Optional.of(namespace));
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(any(), eq(publisherId))).thenReturn(Optional.of(member));
+        when(skillPackageValidator.validate(entries)).thenReturn(ValidationResult.pass());
+        when(skillMetadataParser.parse(skillMdContent)).thenReturn(metadata);
+        when(prePublishValidator.validate(any())).thenReturn(ValidationResult.pass());
+        when(skillRepository.findByNamespaceIdAndSlug(any(), eq("test-skill"))).thenReturn(List.of(skill));
+        when(skillRepository.findByNamespaceIdAndSlugAndOwnerId(any(), eq("test-skill"), eq(publisherId))).thenReturn(Optional.of(skill));
+        when(skillVersionRepository.findBySkillIdAndVersion(any(), eq("2.0.0"))).thenReturn(Optional.empty());
+        lenient().when(skillVersionRepository.findBySkillIdAndStatus(skill.getId(), SkillVersionStatus.PUBLISHED))
+                .thenReturn(List.of(publishedVersion));
+        when(skillVersionRepository.save(any(SkillVersion.class))).thenAnswer(invocation -> {
+            SkillVersion saved = invocation.getArgument(0);
+            if (saved.getId() == null) {
+                setId(saved, 10L);
+            }
+            return saved;
+        });
+        when(skillRepository.save(any())).thenReturn(skill);
+
+        SkillPublishService.PublishResult result = service.publishFromEntries(
+                namespaceSlug,
+                entries,
+                publisherId,
+                SkillVisibility.PUBLIC,
+                Set.of()
+        );
+
+        // Even with a previously published version, EVERY_PUBLISH forces review
+        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        verify(reviewTaskRepository).save(any(ReviewTask.class));
+        verify(eventPublisher, never()).publishEvent(any(SkillPublishedEvent.class));
     }
 
     @Test
