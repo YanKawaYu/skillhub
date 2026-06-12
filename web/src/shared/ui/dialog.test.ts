@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest'
+/** @vitest-environment jsdom */
+
+import { createElement, type MouseEvent } from 'react'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import {
   Dialog,
   DialogTrigger,
@@ -30,5 +34,33 @@ describe('Dialog components', () => {
   it('sets displayName on function components', () => {
     expect(DialogHeader.displayName).toBe('DialogHeader')
     expect(DialogFooter.displayName).toBe('DialogFooter')
+  })
+
+  it('preserves child click handlers when rendered as child', () => {
+    const parentClick = vi.fn()
+    const childClick = vi.fn((event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation()
+    })
+
+    render(createElement(
+      'div',
+      { onClick: parentClick },
+      createElement(
+        Dialog,
+        null,
+        createElement(
+          DialogTrigger,
+          { asChild: true },
+          createElement('button', { type: 'button', onClick: childClick }, 'Open dialog'),
+        ),
+        createElement(DialogContent, null, 'Dialog content'),
+      ),
+    ))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open dialog' }))
+
+    expect(childClick).toHaveBeenCalledTimes(1)
+    expect(parentClick).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeDefined()
   })
 })
