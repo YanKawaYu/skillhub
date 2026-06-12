@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Namespace, NamespaceMember, ManagedNamespace, CreateNamespaceRequest, NamespaceCandidateUser, NamespaceRole, BatchMemberResponse, PagedResponse } from '@/api/types'
+import type { Namespace, NamespaceMember, ManagedNamespace, CreateNamespaceRequest, NamespaceCandidateUser, NamespaceRole, NamespaceReviewPolicy, BatchMemberResponse, PagedResponse } from '@/api/types'
 import { namespaceApi } from '@/api/client'
 import { replaceNamespaceMemberRole } from '@/shared/lib/namespace-member-cache'
 import { shouldEnableNamespaceMemberCandidates } from './skill-query-helpers'
@@ -193,8 +193,17 @@ export function useUpdateNamespace() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ slug, displayName, description }: { slug: string; displayName?: string; description?: string }) =>
-      namespaceApi.update(slug, { displayName, description }),
+    mutationFn: ({
+      slug,
+      displayName,
+      description,
+      reviewPolicy,
+    }: {
+      slug: string
+      displayName?: string
+      description?: string
+      reviewPolicy?: NamespaceReviewPolicy
+    }) => namespaceApi.update(slug, { displayName, description, reviewPolicy }),
     onSuccess: (namespace) => {
       queryClient.invalidateQueries({ queryKey: ['namespaces', namespace.slug] })
       queryClient.invalidateQueries({ queryKey: ['namespaces', 'my'] })

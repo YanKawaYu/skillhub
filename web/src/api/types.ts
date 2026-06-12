@@ -100,6 +100,7 @@ export interface MergeConfirmRequest {
 // Namespace types
 export type NamespaceStatus = 'ACTIVE' | 'FROZEN' | 'ARCHIVED' | string
 export type NamespaceRole = 'OWNER' | 'ADMIN' | 'MEMBER' | string
+export type NamespaceReviewPolicy = 'AUTO_APPROVE' | 'FIRST_PUBLISH_ONLY' | 'EVERY_PUBLISH'
 
 export interface Namespace {
   id: number
@@ -109,6 +110,7 @@ export interface Namespace {
   type: 'GLOBAL' | 'TEAM'
   avatarUrl?: string
   status: NamespaceStatus
+  reviewPolicy?: NamespaceReviewPolicy
   createdAt: string
   updatedAt?: string
 }

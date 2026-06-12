@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.dto;
 
 import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.NamespaceReviewPolicy;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.domain.namespace.NamespaceType;
 
@@ -14,6 +15,7 @@ public record NamespaceResponse(
         String description,
         NamespaceType type,
         String avatarUrl,
+        NamespaceReviewPolicy reviewPolicy,
         String createdBy,
         Instant createdAt,
         Instant updatedAt
@@ -27,6 +29,7 @@ public record NamespaceResponse(
                 namespace.getDescription(),
                 namespace.getType(),
                 namespace.getAvatarUrl(),
+                namespace.getReviewPolicy(),
                 namespace.getCreatedBy(),
                 namespace.getCreatedAt(),
                 namespace.getUpdatedAt()

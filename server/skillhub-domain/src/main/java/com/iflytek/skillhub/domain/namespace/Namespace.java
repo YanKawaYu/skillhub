@@ -28,6 +28,10 @@ public class Namespace {
     @Column(nullable = false, length = 32)
     private NamespaceType type = NamespaceType.TEAM;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_policy", nullable = false, length = 32)
+    private NamespaceReviewPolicy reviewPolicy = NamespaceReviewPolicy.FIRST_PUBLISH_ONLY;
+
     @Column(name = "avatar_url", length = 512)
     private String avatarUrl;
 
@@ -69,6 +73,8 @@ public class Namespace {
     public void setStatus(NamespaceStatus status) { this.status = status; }
     public NamespaceType getType() { return type; }
     public void setType(NamespaceType type) { this.type = type; }
+    public NamespaceReviewPolicy getReviewPolicy() { return reviewPolicy; }
+    public void setReviewPolicy(NamespaceReviewPolicy reviewPolicy) { this.reviewPolicy = reviewPolicy; }
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getCreatedBy() { return createdBy; }

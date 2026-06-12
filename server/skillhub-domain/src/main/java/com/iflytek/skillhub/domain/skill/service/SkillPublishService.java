@@ -438,7 +438,7 @@ public class SkillPublishService {
         // 8. Create SkillVersion
         SkillVersion version = new SkillVersion(skill.getId(), metadata.version(), publisherId);
         version.setRequestedVisibility(visibility);
-        boolean autoPublish = forceAutoPublish || isSuperAdmin || shouldAutoPublishUpdate(skill, visibility);
+        boolean autoPublish = forceAutoPublish || isSuperAdmin || shouldAutoPublish(namespace, skill, visibility);
         if (autoPublish) {
             version.setStatus(SkillVersionStatus.PUBLISHED);
             version.setPublishedAt(currentTime());
@@ -589,8 +589,19 @@ public class SkillPublishService {
         skillVersionRepository.flush();
     }
 
+    private boolean shouldAutoPublish(Namespace namespace, Skill skill, SkillVisibility requestedVisibility) {
+        if (requestedVisibility == SkillVisibility.PRIVATE) {
+            return false;
+        }
+        return switch (namespace.getReviewPolicy()) {
+            case AUTO_APPROVE -> true;
+            case EVERY_PUBLISH -> false;
+            case FIRST_PUBLISH_ONLY -> shouldAutoPublishUpdate(skill, requestedVisibility);
+        };
+    }
+
     private boolean shouldAutoPublishUpdate(Skill skill, SkillVisibility requestedVisibility) {
-        if (requestedVisibility == SkillVisibility.PRIVATE || skill.getVisibility() != requestedVisibility) {
+        if (skill.getVisibility() != requestedVisibility) {
             return false;
         }
         return !skillVersionRepository

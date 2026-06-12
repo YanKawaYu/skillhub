@@ -103,6 +103,36 @@ class NamespaceServiceTest {
     }
 
     @Test
+    void updateNamespace_shouldUpdateReviewPolicy() {
+        Long namespaceId = 1L;
+        String operatorUserId = "user-1";
+        Namespace namespace = new Namespace("slug", "Name", "user-1");
+        when(namespaceRepository.findById(namespaceId)).thenReturn(Optional.of(namespace));
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(namespaceId, operatorUserId))
+                .thenReturn(Optional.of(new NamespaceMember(namespaceId, operatorUserId, NamespaceRole.OWNER)));
+        when(namespaceAccessPolicy.isImmutable(namespace)).thenReturn(false);
+        when(namespaceAccessPolicy.canMutateSettings(namespace)).thenReturn(true);
+        when(namespaceRepository.save(any(Namespace.class))).thenReturn(namespace);
+
+        assertEquals(NamespaceReviewPolicy.FIRST_PUBLISH_ONLY, namespace.getReviewPolicy());
+
+        namespaceService.updateNamespace(
+                namespaceId,
+                null,
+                null,
+                null,
+                NamespaceReviewPolicy.EVERY_PUBLISH,
+                operatorUserId
+        );
+
+        assertEquals(NamespaceReviewPolicy.EVERY_PUBLISH, namespace.getReviewPolicy());
+
+        // Null policy keeps the existing value untouched
+        namespaceService.updateNamespace(namespaceId, "New Name", null, null, null, operatorUserId);
+        assertEquals(NamespaceReviewPolicy.EVERY_PUBLISH, namespace.getReviewPolicy());
+    }
+
+    @Test
     void updateNamespace_shouldThrowExceptionWhenNotFound() {
         when(namespaceRepository.findById(1L)).thenReturn(Optional.empty());
 
