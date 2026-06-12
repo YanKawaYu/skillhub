@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Pencil } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
@@ -9,6 +10,7 @@ import { EmptyState } from '@/shared/components/empty-state'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { CreateNamespaceDialog } from '@/features/namespace/create-namespace-dialog'
+import { EditNamespaceDialog } from '@/features/namespace/edit-namespace-dialog'
 import {
   useArchiveNamespace,
   useDeleteNamespace,
@@ -286,6 +288,22 @@ export function MyNamespacesPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  {namespace.type === 'TEAM' &&
+                    !namespace.immutable &&
+                    namespace.status === 'ACTIVE' &&
+                    (namespace.currentUserRole === 'OWNER' || namespace.currentUserRole === 'ADMIN') && (
+                    <EditNamespaceDialog namespace={namespace}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={t('namespaceEdit.editButton')}
+                      >
+                        <Pencil className="mr-1 h-4 w-4" />
+                        {t('namespaceEdit.editButton')}
+                      </Button>
+                    </EditNamespaceDialog>
+                  )}
                   {namespace.type === 'TEAM' && (
                     <Button
                       variant="outline"
