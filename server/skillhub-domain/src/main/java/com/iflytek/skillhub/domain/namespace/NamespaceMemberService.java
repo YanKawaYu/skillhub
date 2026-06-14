@@ -46,7 +46,7 @@ public class NamespaceMemberService {
 
     @Transactional
     public void removeMember(Long namespaceId, String userId, String operatorUserId) {
-        assertMemberMutationAllowed(namespaceId);
+        Namespace namespace = assertMemberMutationAllowed(namespaceId);
         namespaceService.assertAdminOrOwner(namespaceId, operatorUserId);
 
         NamespaceMember member = namespaceMemberRepository.findByNamespaceIdAndUserId(namespaceId, userId)
@@ -54,6 +54,10 @@ public class NamespaceMemberService {
 
         if (member.getRole() == NamespaceRole.OWNER) {
             throw new DomainBadRequestException("error.namespace.member.owner.remove");
+        }
+        if (!namespaceAccessPolicy.canRemoveMember(namespace, member)) {
+            // ORG 库的 synced 成员由组织同步维护，不可手工移除
+            throw new DomainBadRequestException("error.namespace.member.synced.immutable", namespace.getSlug());
         }
 
         namespaceMemberRepository.deleteByNamespaceIdAndUserId(namespaceId, userId);
@@ -108,7 +112,7 @@ public class NamespaceMemberService {
         return namespaceMemberRepository.findByNamespaceId(namespaceId, pageable);
     }
 
-    private void assertMemberMutationAllowed(Long namespaceId) {
+    private Namespace assertMemberMutationAllowed(Long namespaceId) {
         Namespace namespace = namespaceService.getNamespace(namespaceId);
         if (!namespaceAccessPolicy.canManageMembers(namespace)) {
             if (namespaceAccessPolicy.isImmutable(namespace)) {
@@ -116,5 +120,6 @@ public class NamespaceMemberService {
             }
             throw new DomainBadRequestException("error.namespace.readonly", namespace.getSlug());
         }
+        return namespace;
     }
 }

@@ -22,6 +22,10 @@ public class NamespaceMember {
     @Column(nullable = false, length = 32)
     private NamespaceRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 32)
+    private MemberSource source = MemberSource.MANUAL;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -31,9 +35,14 @@ public class NamespaceMember {
     protected NamespaceMember() {}
 
     public NamespaceMember(Long namespaceId, String userId, NamespaceRole role) {
+        this(namespaceId, userId, role, MemberSource.MANUAL);
+    }
+
+    public NamespaceMember(Long namespaceId, String userId, NamespaceRole role, MemberSource source) {
         this.namespaceId = namespaceId;
         this.userId = userId;
         this.role = role;
+        this.source = source;
     }
 
     @PrePersist
@@ -54,6 +63,8 @@ public class NamespaceMember {
     public void setUserId(String userId) { this.userId = userId; }
     public NamespaceRole getRole() { return role; }
     public void setRole(NamespaceRole role) { this.role = role; }
+    public MemberSource getSource() { return source; }
+    public void setSource(MemberSource source) { this.source = source; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
