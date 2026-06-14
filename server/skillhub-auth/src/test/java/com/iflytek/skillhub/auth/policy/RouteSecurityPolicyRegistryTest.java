@@ -117,4 +117,30 @@ class RouteSecurityPolicyRegistryTest {
         assertTrue(registry.shouldProjectRequestContext("/api/web/namespaces/team-a"));
         assertFalse(registry.shouldProjectRequestContext("/assets/index.css"));
     }
+
+    @Test
+    void apiTokenPolicyAllowsMyNamespacesReadForPublishTargetResolution() {
+        assertTrue(registry.authorizeApiToken("GET", "/api/web/me/namespaces", Set.of()).allowed());
+        assertTrue(registry.authorizeApiToken("GET", "/api/v1/me/namespaces", Set.of()).allowed());
+    }
+
+    @Test
+    void authorizationPolicies_shouldRequireAuthenticationForMyNamespaces() {
+        boolean matched = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/web/me/namespaces".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.AUTHENTICATED);
+
+        assertTrue(matched);
+    }
+
+    @Test
+    void authorizationPolicies_shouldPermitHunterDockReconcileEndpoint() {
+        boolean matched = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.POST
+                        && "/api/internal/hunterdock/namespaces/reconcile".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+
+        assertTrue(matched);
+    }
 }
